@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h1>Choose a Plan</h1>
+<form action="/subscribe" method="POST" id="payment-form">
+    <input type="hidden" name="email" value="{{ email }}">
+    <input type="hidden" name="name" value="{{ name }}">
+    <select name="plan" required>
+        {% for plan in plans %}
+        <option value="{{ plan['name'] }}">{{ plan['name'] }} - {{ plan['monthly'] }} Monthly / {{ plan['yearly'] }}
+            Yearly</option>
+        {% endfor %}
+    </select>
+    <select name="billing" required>
+        <option value="monthly">Monthly Billing</option>
+        <option value="yearly">Yearly Billing</option>
+    </select>
+    <div id="card-element"></div>
+    <button type="submit" id="submit-button">Subscribe</button>
+    <div id="card-errors" role="alert"></div>
+</form>
+<script src="https://js.stripe.com/v3/"></script>
+<script src="{{ url_for('static', filename='subscribe.js') }}"></script>
+{% endblock %}
