@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, jsonify, render_template, redirect
 import mysql.connector
 import stripe
 app = Flask(__name__)
@@ -35,6 +35,7 @@ def register():
     values = (name, email, password)
     cursor.execute(query, values)
     mydb.commit()
+    cursor.close()
     
     return render_template('login.html')
   
@@ -48,85 +49,59 @@ def login():
     password = request.form['password']
 
     # Verify user credentials
+    
     cursor = mydb.cursor()
     query = "SELECT * FROM users WHERE email = %s AND password = %s"
     values = (email, password)
     cursor.execute(query, values)
     user = cursor.fetchone()
+    cursor.close()
+    
     
     if user:
-      return render_template('plans.html', plans=plans)
+      return render_template('plans.html', plans=plans, email=email, name=user[1])
     else:
       return render_template('login.html', error='Invalid email or password')
 
   return render_template('login.html')
 @app.route('/subscribe', methods=['POST'])
 def subscribe():
-    # Get form data
-    email = request.form['email']
-    name = request.form['name']
+  email = request.form['email']
+  name = request.form['name']
 
-    # Create Stripe customer
-    customer = stripe.Customer.create(
-        email=email,
-        name=name
-    )
-    customer_id = customer['id']
+  customer = stripe.Customer.create(email=email, name=name)
+  customer_id = customer['id']
 
-    # Save customer to database
-    cursor = mydb.cursor()
-    query = "INSERT INTO customers (id, email, name) VALUES (%s, %s, %s)"
-    values = (customer_id, email, name)
-    cursor.execute(query, values)
-    mydb.commit()
+  cursor = mydb.cursor()
+  query = "INSERT INTO customers (id, email, name) VALUES (%s, %s, %s)"
+  values = (customer_id, email, name)
+  
+  cursor.execute(query, values)
+  mydb.commit()
+  cursor.close()
 
+  plan = request.form['plan']
 
-    # Get selected plan and billing interval
-    plan = request.form['plan']
-    billing = request.form['billing']
+  cursor = mydb.cursor()
+  user_query = "SELECT id FROM users WHERE email = %s"
+  cursor.execute(user_query, (email,))
+  
+  results = cursor.fetchall()
+  user_id = results[0]
 
-    # Get credit card details
-    token = request.form['stripeToken']
-    card = stripe.Customer.create_source(
-        id=customer_id,
-        source=token
-    )
+  sub = stripe.Subscription.create(customer=customer_id, items=[{'plan': plan}])
+  
+  sub_id = sub['id']
 
-    # Retrieve user_id based on email (modify this query based on your database structure)
-    user_query = "SELECT id FROM users WHERE email = %s"
-    cursor.execute(user_query, (email,))
-    user_result = cursor.fetchone()
+  cursor = mydb.cursor()
+  sub_query = "INSERT INTO subscriptions (user_id, stripe_sub) VALUES (%s, %s)"
+  sub_values = (user_id, sub_id)
+  
+  cursor.execute(sub_query, sub_values)
+  mydb.commit()
+  cursor.close()
 
-    if user_result:
-        user_id = user_result[0]
-
-        # Create subscription
-        if billing == 'monthly':
-            sub = stripe.Subscription.create(
-                customer=customer_id,
-                items=[{'plan': plan}],
-                expand=['latest_invoice.payment_intent']
-            )
-        else:
-            sub = stripe.Subscription.create(
-                customer=customer_id,
-                items=[{'plan': plan}],
-                expand=['latest_invoice.payment_intent'],
-                billing='yearly'
-            )
-
-        sub_id = sub['id']
-
-        # Save subscription details to database
-        sub_query = "INSERT INTO subscriptions (user_id, plan, billing, stripe_sub) VALUES (%s, %s, %s, %s)"
-        sub_values = (user_id, plan, billing, sub_id)
-        cursor.execute(sub_query, sub_values)
-        mydb.commit()
-
-        return render_template('subscribe_success.html', plan=plan)
-    else:
-        return "User not found"
-
+  return render_template('subscribe_success.html')
 @app.route('/cancel/<string:sub_id>', methods=['GET'])
 def cancel(sub_id):
     # Cancel subscription in Stripe
@@ -138,6 +113,8 @@ def cancel(sub_id):
     values = (sub_id,)
     cursor.execute(query, values)
     mydb.commit()
+    cursor.close()
+   
 
     return render_template('unsubscribe_success.html')
 

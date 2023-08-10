@@ -2,23 +2,9 @@
 
 {% block content %}
 <h1>Choose a Plan</h1>
-<form action="/subscribe" method="POST" id="payment-form">
-    <input type="hidden" name="email" value="{{ email }}">
-    <input type="hidden" name="name" value="{{ name }}">
-    <select name="plan" required>
-        {% for plan in plans %}
-        <option value="{{ plan['name'] }}">{{ plan['name'] }} - {{ plan['monthly'] }} Monthly / {{ plan['yearly'] }}
-            Yearly</option>
-        {% endfor %}
-    </select>
-    <select name="billing" required>
-        <option value="monthly">Monthly Billing</option>
-        <option value="yearly">Yearly Billing</option>
-    </select>
-    <div id="card-element"></div>
-    <button type="submit" id="submit-button">Subscribe</button>
-    <div id="card-errors" role="alert"></div>
-</form>
-<script src="https://js.stripe.com/v3/"></script>
-<script src="{{ url_for('static', filename='subscribe.js') }}"></script>
+<script async src="https://js.stripe.com/v3/pricing-table.js"></script>
+<stripe-pricing-table pricing-table-id="prctbl_1NdVtnSH8lu44vb85YMKhftv"
+publishable-key="pk_test_51NdGfwSH8lu44vb8qMFt3KhLPEK3DkU4oRstwfgST8p3MWNUUJ0O41ccYdFcDbVKqIyiM64LWIzBBA3lJG776ExE00x2i6foIQ">
+</stripe-pricing-table>
+
 {% endblock %}
