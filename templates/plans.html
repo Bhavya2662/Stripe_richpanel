@@ -1,10 +1,40 @@
-{% extends 'base.html' %}
 
-{% block content %}
-<h1>Choose a Plan</h1>
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}My App{% endblock %}</title>
+    <style >
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+        
+        body {
+            min-height: 100vh;
+        }
+        h1{
+
+            text-align: center;
+            
+            }
+            
+    </style>
+</head>
+
+<body>
+<h1  >Choose the right Plan for you</h1>
 <script async src="https://js.stripe.com/v3/pricing-table.js"></script>
 <stripe-pricing-table pricing-table-id="prctbl_1NdVtnSH8lu44vb85YMKhftv"
 publishable-key="pk_test_51NdGfwSH8lu44vb8qMFt3KhLPEK3DkU4oRstwfgST8p3MWNUUJ0O41ccYdFcDbVKqIyiM64LWIzBBA3lJG776ExE00x2i6foIQ">
 </stripe-pricing-table>
 
-{% endblock %}
+</body>
+
+</html>
+
+

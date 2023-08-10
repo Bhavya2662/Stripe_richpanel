@@ -4,7 +4,8 @@ import stripe
 app = Flask(__name__)
 stripe.api_key = 'sk_test_51NdGfwSH8lu44vb8Ss5VsJy58ncGFku2eHqRKh2Ehte5XrYND2dvCC6c6QDgTqUFzSghq2n0fWSPI9EUQ313tN6f00n6ym3MuC'
 
-
+# plans = stripe.Plan.list()
+# print(plans.data) 
 # MySQL configs
 mydb = mysql.connector.connect(
   host="localhost",
@@ -81,6 +82,7 @@ def subscribe():
   cursor.close()
 
   plan = request.form['plan']
+  billing = request.form['billing']
 
   cursor = mydb.cursor()
   user_query = "SELECT id FROM users WHERE email = %s"
@@ -88,10 +90,39 @@ def subscribe():
   
   results = cursor.fetchall()
   user_id = results[0]
-
-  sub = stripe.Subscription.create(customer=customer_id, items=[{'plan': plan}])
+  products = stripe.Product.list()
+  price_id=''
+  if billing == 'monthly' and plan == 'Basic':  
+    price_id = 'price_1NdVLpSH8lu44vb8GeaNDrN6'
+  elif billing == 'monthly' and plan == 'Standard':
+    price_id = 'price_1NdVgdSH8lu44vb8cI5AywPy'
+  elif billing == 'monthly' and plan == 'Premium':
+    price_id = 'price_1NdVhUSH8lu44vb845sdug7j'
+  elif billing == 'monthly' and plan == 'Regular':
+    price_id = 'price_1NdVhwSH8lu44vb8wpGyeEIk'
+  if billing == 'yearly' and plan == 'Basic':  
+    price_id = 'price_1NdVfVSH8lu44vb8Hp5hORNv'
+  elif billing == 'yearly' and plan == 'Standard':
+    price_id = 'price_1NdVgdSH8lu44vb8vPOe3R3p'
+  elif billing == 'yearly' and plan == 'Premium':
+    price_id = 'price_1NdVhUSH8lu44vb8NQs1LHq6'
+  elif billing == 'yearly' and plan == 'Regular':
+    price_id = 'price_1NdVhwSH8lu44vb83RcbdcOe'
   
-  sub_id = sub['id']
+
+  
+
+# Get default price id
+  # Create subscription with price id    
+  subscription = stripe.Subscription.create(
+  customer=customer_id,
+  items=[{
+    "price": price_id 
+  }]
+)
+
+  
+  sub_id = subscription['id']
 
   cursor = mydb.cursor()
   sub_query = "INSERT INTO subscriptions (user_id, stripe_sub) VALUES (%s, %s)"
